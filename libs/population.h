@@ -95,6 +95,8 @@ class Population{
 				std::copy(parm_model, parm_model + n_parm, my_model_parm);
 				popln[i] = new Individual(mod, solver, my_model_parm, n_parm, x_0, 0., flippy);
 				parent[i] = 0;
+				
+//				delete my_model_parm;
 			}
 			
 			parm_dists = param_dist;
@@ -131,6 +133,45 @@ class Population{
 			io = inout;
 			if(inout==true) write_init();			
 		};
+		
+		virtual ~Population(){
+			
+			for(int i=0; i < pop_size; i++){
+				delete popln[i];
+			}
+			delete[] popln;
+//			delete transform;
+			
+//			free(model);
+
+//			delete pop_xs;
+//			delete pop_xis;
+//			delete selected;
+//			delete parm_dists;
+//			free(parm_mod);
+			//delete mut_parms;
+	
+//			free(sol);
+//			free(sel_coeff);
+//			free(parent);
+//			free(p_under_sel);
+
+			outfile_x->close();
+			outfile_x_trunc->close();
+			outfile_xis->close();
+			outfile_xis_trunc->close();
+			outfile_parm->close();
+			outfile_parent->close();
+			outfile_fitness->close();
+			
+			delete outfile_x;
+			delete outfile_x_trunc;
+			delete outfile_xis;
+			delete outfile_xis_trunc;
+			delete[] outfile_parm;
+			delete outfile_parent;
+			delete outfile_fitness;
+		};
 	
 	//functions for extracting a single parameter for the whole population (array or summary output)
 		double* get_xs();
@@ -164,7 +205,7 @@ class Population{
 	//function for repopulation
 		void repop(bool mutation);
 	//function for drift-selection based repopulation
-		void repop_wf_sel(Func fitness, double * parm_fit, double mutation);
+		void repop_wf_sel(Func fitness, double * parm_fit, double * mutation, int epi_in);
 	//function for drift-selection based repopulation for genetic distances	
 		int repop_wf_sel_gen_dist(Func fitness, Func * pdf, double * parm_fit, double mutation, double target, double target_margin, double right_bound);		
 	//function for stepping simulation, including selection, checking bounds, and repop
@@ -421,7 +462,7 @@ void Population::repop(bool mutation){
 		//mutate, regardless of selection status
 		if(mutation){
 			for(int i=0; i < pop_size; i++){
-				popln[i]->mutate(parm_dists, mut_parms, t, p_under_sel);
+//				popln[i]->mutate(parm_dists, mut_parms, t, p_under_sel);
 			}
 		}
 		
@@ -430,9 +471,10 @@ void Population::repop(bool mutation){
 	}
 }
 
-void Population::repop_wf_sel(Func fitness, double * parm_fit, double mutation){
+void Population::repop_wf_sel(Func fitness, double * parm_fit, double * mutation, int epi_in = 1){
 	double sum = 0.;
 	int idx = 0;
+	double mut_prob = 0.;
 	
 	for(int i=0; i<pop_size; i++){
 		sel_coeff[i] = fitness.apply(popln[i]->get_x(), t, parm_fit);
@@ -460,6 +502,7 @@ void Population::repop_wf_sel(Func fitness, double * parm_fit, double mutation){
 		}
 		
 		popln[i]->copy(popln[idx]);
+
 		parent[i] = idx;
 		
 		selected[i] = false;
@@ -467,16 +510,26 @@ void Population::repop_wf_sel(Func fitness, double * parm_fit, double mutation){
 	
 	
 	for(int i=0; i<pop_size; i++){
-		double rv = 1.*rand()/RAND_MAX;
-		if(rv < mutation){
-			if(pleiotropy) popln[i]->mutate(parm_dists, mut_parms,t, p_under_sel);
-			else popln[i]->mutate_oneparm(parm_dists, mut_parms,t, p_under_sel);
+		for(int j=0; j < nparm; j++){
+			mut_prob = mutation[j];
+		
+			double rv = 1.*rand()/RAND_MAX;
+			if(rv < mut_prob){
+				if(pleiotropy) popln[i]->mutate(parm_dists, mut_parms,t, j);
+				else popln[i]->mutate_oneparm(parm_dists, mut_parms,t, p_under_sel);
+			}
 		}
 	}
 	
 	n_seld++;
 	
 	if(io) write_out_repop();
+	
+	if(epi_in == 0){
+		for(int i=0; i<pop_size; i++){
+			popln[i]->set_xi(0.);
+		}
+	}
 }
 
 int Population::repop_wf_sel_gen_dist(Func fitness, Func * pdf, double * parm_fit, double mutation, double target, double target_margin, double right_bound){
@@ -549,8 +602,8 @@ int Population::repop_wf_sel_gen_dist(Func fitness, Func * pdf, double * parm_fi
 		for(int i=0; i<pop_size; i++){
 			double rv = 1.*rand()/RAND_MAX;
 			if(rv < mutation){
-				if(pleiotropy) popln[i]->mutate(parm_dists, mut_parms,t, p_under_sel);
-				else popln[i]->mutate_oneparm(parm_dists, mut_parms,t, p_under_sel);
+//				if(pleiotropy) popln[i]->mutate(parm_dists, mut_parms,t, p_under_sel);
+//				else popln[i]->mutate_oneparm(parm_dists, mut_parms,t, p_under_sel);
 			}
 		}
 	}

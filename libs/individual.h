@@ -62,7 +62,7 @@ class Individual{
 	//function for selection
 		bool selection(Func fitness, double * selection_parms, double time);
 	//function for mutation
-		void mutate(Func * dists, double ** parms_array, double time, int * p_seld);
+		void mutate(Func * dists, double ** parms_array, double time, int idx);
 		void mutate_oneparm(Func *dists, double ** parms_array, double time, int * p_seld);
 	//function for recombination
 		void recombine(Individual momz, Individual popz);	
@@ -103,10 +103,8 @@ bool Individual::selection(Func fitness, double * selection_parms, double time){
 	else return rv > fitness.apply(x, time, selection_parms);
 }
 
-void Individual::mutate(Func * dists, double ** parms_array, double time, int * p_seld){
-	for(int i=0; i < n_parms; i++){
-		if(p_seld[i] == 1) parameters[i] = dists->apply(parameters[i], time, parms_array[i], 1);
-	}
+void Individual::mutate(Func * dists, double ** parms_array, double time, int idx){
+	parameters[idx] = dists->apply(parameters[idx], time, parms_array[idx], 1);
 }
 
 void Individual::mutate_oneparm(Func *dists, double ** parms_array, double time, int * p_seld){
